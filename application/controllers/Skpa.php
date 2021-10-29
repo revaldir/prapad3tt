@@ -742,4 +742,129 @@ class Skpa extends CI_Controller
 			show_404();
 		}
 	}
+
+	public function get_gelombang()
+	{
+		if ($this->input->is_ajax_request()) {
+			$res = [
+				'status' => true,
+				'data'	 => $this->skpa_model->get_inactive_gelombang($this->input->post('angkatan_id'))
+			];
+
+			echo json_encode($res);
+		} else {
+			show_404();
+		}
+	}
+
+	public function backup()
+	{
+		if ($this->role == 'Superadmin') {
+			$data['list'] = $this->skpa_model->get_data();
+			$this->template->load('layout/template', 'skpa/backup/index', $data);
+		} else {
+			show_404();
+		}
+	}
+
+	public function backup_process()
+	{
+		$skpa_id = $this->input->post('skpa_id');
+		$gelombang = $this->input->post('gelombang');
+		$data_berkas = $this->skpa_model->get_berkas_nama($skpa_id, $gelombang);
+
+		// Enter the name to creating zipped directory
+		$zipcreated = 'Backup Berkas ' . str_replace('/', '-', $data_berkas[0]['tahun']) . ' ' . $data_berkas[0]['kode_skpa'] . ' Gel. ' . $data_berkas[0]['gelombang'] . '.zip';
+
+		$file_revisi = $file_judul = $file_seminar = $files_to_delete = [];
+
+		foreach ($data_berkas as $key => $val) {
+			$file_judul[$val['nim']] = !empty($val['file_judul']) ? $val['file_judul'] : null;
+			$file_seminar[$val['nim']] = !empty($val['file_seminar']) ? 'seminar/' . $val['file_seminar'] : null;
+			$file_revisi[$val['nim']] = !empty($val['file_revisi']) ? 'revisi/' . $val['file_revisi'] : null;
+		}
+
+		// Create new zip class
+		$zip = new ZipArchive;
+
+		if ($zip->open($zipcreated, ZIPARCHIVE::CREATE | ZIPARCHIVE::OVERWRITE) !== TRUE) {
+			die("An error occurred creating your ZIP file.");
+		}
+
+		// Berkas Pra Proposal
+		foreach ($file_judul as $nim => $path) {
+			if (is_null($path)) continue;
+
+			// generate filename to add to zip
+			$filepath = 'assets/file/' . $path;
+
+			if (file_exists($filepath)) {
+				// generate new filename
+				$tmp = explode('.', $path);
+				$ext = end($tmp);
+				$new_name = $nim . '/PraProposal_' . $nim . '.' . $ext;
+				$files_to_delete[] = $filepath;
+				$zip->addFile($filepath, $new_name) or die("ERROR: Could not add the file $filepath");
+			} else {
+				continue;
+			}
+		}
+
+		// Berkas Proposal
+		foreach ($file_seminar as $nim => $path) {
+			if (is_null($path)) continue;
+
+			// generate filename to add to zip
+			$filepath = 'assets/file/' . $path;
+
+			if (file_exists($filepath)) {
+				// generate new filename
+				$tmp = explode('.', $path);
+				$ext = end($tmp);
+				$new_name = $nim . '/Proposal_' . $nim . '.' . $ext;
+				$files_to_delete[] = $filepath;
+				$zip->addFile($filepath, $new_name) or die("ERROR: Could not add the file $filepath");
+			} else {
+				continue;
+			}
+		}
+
+		// Berkas Revisi
+		foreach ($file_revisi as $nim => $path) {
+			if (is_null($path)) continue;
+
+			// generate filename to add to zip
+			$filepath = 'assets/file/' . $path;
+
+			if (file_exists($filepath)) {
+				// generate new filename
+				$tmp = explode('.', $path);
+				$ext = end($tmp);
+				$new_name = $nim . '/Revisi_' . $nim . '.' . $ext;
+				$files_to_delete[] = $filepath;
+				$zip->addFile($filepath, $new_name) or die("ERROR: Could not add the file $filepath");
+			} else {
+				continue;
+			}
+		}
+
+		$zip->close();
+
+		if (file_exists($zipcreated)) {
+			header('Content-Type: application/zip');
+			header('Content-Disposition: attachment; filename="' . $zipcreated . '"');
+
+			readfile($zipcreated);
+			unlink($zipcreated);
+		}
+
+		foreach ($files_to_delete as $file) {
+			unlink($file);
+		}
+
+		$this->skpa_model->backup_skpa_gelombang(['is_backed_up' => '1'], $gelombang);
+		$this->session->set_flashdata('alert_message', show_alert('<i class="fa fa-check"></i> Backup berkas berhasil!', 'success'));
+
+		redirect('backup');
+	}
 }

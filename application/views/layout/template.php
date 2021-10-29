@@ -309,6 +309,14 @@
 								</a>
 							</li>
 
+							<li class="menu-title">Backup</li>
+							<li>
+								<a href="<?php echo site_url('backup') ?>">
+									<i data-feather="download-cloud"></i>
+									<span>Backup Berkas </span>
+								</a>
+							</li>
+
 						<?php } ?>
 
 					</ul>
