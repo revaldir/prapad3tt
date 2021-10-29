@@ -108,6 +108,9 @@ $route['insert_mahasiswa']		    = 'Mahasiswa/add';
 $route['update_mahasiswa']		    = 'Mahasiswa/update';
 $route['delete_mahasiswa/(:any)']   = 'Mahasiswa/delete/$1';
 
+## Gelombang SKPA
+$route['get_gelombang']	= 'Skpa/get_gelombang';
+
 //----------------------------------------------------//
 //                      TRANSAKSI                     //
 //----------------------------------------------------//
@@ -174,3 +177,7 @@ $route['rekomendasi_judul']	= 'Partisipan/rekomendasi_judul';
 
 $route['laporan/jurnal']   = 'Laporan/jurnal';
 $route['laporan/neraca_saldo'] = 'Laporan/neraca_saldo';
+
+// Backup
+$route['backup'] = 'Skpa/backup';
+$route['backup_berkas'] = 'Skpa/backup_process';
